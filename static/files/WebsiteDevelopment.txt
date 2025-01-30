@@ -1,0 +1,442 @@
+Website Development Log:
+
+Created a main.py
+
+Created a directory called templates for storing html files
+	html5 is a good site for html templates
+
+Create a directory called static for storing images, videos, style sheets etc
+	unsplash is a good site for images
+
+Downloaded a bootstramp template that contained:
+	CSS folder with style sheet
+	JS folder with scripts
+	assets folder containing images
+	4 html pages for the home page, about page, contact us page, individual post page
+
+Move html pages into templates directory
+Move CSS, JS and images folders into a directory called static
+
+Setting up the basic flask environment:
+	from flask import Flask, render_template
+	import requests
+
+	app = Flask(__name__)
+
+	@app.route('/')
+	def home():
+    		return render_template("index.html")
+
+	if __name__ == "__main__":
+    		app.run(debug=True)
+
+Using Jinja to Build a URL
+	In the index.html file create an anchor link to a html page
+		<a href="{{ url_for('about') }}">About Us</a>
+	In python file add the function associated with the html file
+		# About page
+		@app.route('/about')
+		def about():
+    			return render_template("about.html")
+
+Updating various links within the index.html page with updated dynamic locations:
+	At the top within the header:
+		<title>Website development</title>
+        	<link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='/assets/favicon.ico') }}" />
+		<!-- Core theme CSS (includes Bootstrap)-->
+        	<link href="{{ url_for('static', filename='/css/styles.css') }}" rel="stylesheet" />
+	At the bottom just before the end of the body:
+		<!-- Bootstrap core JS-->
+    		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    		<!-- Core theme JS-->
+    		<script src="{{ url_for('static', filename='/js/scripts.js') }}"></script>
+	
+Using Jinja templating to seperate the header and footer from the index page:
+	Leave only the body in the index page
+	Take the header and nav bar and place them in a header.html file
+	Take the footer and place it in a footer.html file
+	Replace were they once were within index.html with:
+		{% include "header.html" %}
+		{% include "footer.html" %}
+	Update all navbar links using url_for so that they can function:
+                <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="{{ url_for('about') }}">About</a></li>
+                <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="{{ url_for('contact') }}">Contact</a></li>
+
+Jinja Template Inheriting:
+	Creating a base.html page that all other html pages will inherit from:
+		<!DOCTYPE html>
+		<html lang="en">
+		<head>
+    			<meta charset="UTF-8">
+    			<title>{% block title %}{% endblock %}</title>
+			<style> {% block styling %} links to any styling goes here {% endblock %} </style>
+		</head>
+		<body>
+    			{% block content %}{% endblock %}
+		</body>
+		</html>
+	Inheriting the base.html from another html page:
+		At the very top of the page place:
+			{% extends "base.html" %}
+		Place and fill the blocks from the base page:
+			{% block title %}Page title of this particular page{% endblock %}
+			{% block content %}All of the pages contents should be entered here{% endblock %}
+	How to overwrite or change aspects from the base.html file:
+		This can be done with the super keyword:
+			{% block styling %}
+   				{‌{ super() }}
+   				h1 {color:red;}
+			{% endblock %}
+
+Altering the homepage to list json data:
+	API recieving the json data from npoint:
+		json_data = requests.get("https://api.npoint.io/b5f30d88bcdfb33e5983").json()
+	main.py home page alterations:
+		@app.route('/')
+		def home():
+    			return render_template("index.html", all_posts=json_data)
+	Update url_for links for the homepage "home" in header
+	Code in index.html for displaying the data:
+		<!-- Main Content-->
+        	<div class="container px-4 px-lg-5">
+            		<div class="row gx-4 gx-lg-5 justify-content-center">
+                		<div class="col-md-10 col-lg-8 col-xl-7">
+
+                    			{% for project in all_posts %}
+                    			<div class="post-preview">
+                        			<a href="#">
+                            				<h2 class="post-title">{{project.ProjectName}}</h2>
+                            				<h3 class="post-subtitle">{{project.TechnologiesUsed}}</h3>
+                        			</a>
+                    			</div>
+                    			<hr>
+                    			{% endfor %}
+
+Setting up the contact and about html pages
+	main.py creating routes for both webpages:
+		@app.route('/about')
+		def about():
+    			return render_template("about.html")
+
+		@app.route('/contact')
+		def contact():
+    			return render_template("contact.html")
+	Replace their headers and footers with the jinja template
+	Update the image links with url_for so that any images appear
+
+Automated Forms with Flask-WTF and Bootstrap_Flask
+	In Terminal, pip install Flask-WTF, pip install wtforms[email]
+	Importing:
+		from flask_wtf import FlaskForm
+		from wtforms import StringField, PasswordField, SubmitField, SelectField
+		from wtforms.validators import DataRequired, Email, URL
+	Creating a class for a form:
+		# Classes for the WTF-Forms
+		class ContactForm(FlaskForm):
+    			name = StringField('Name', validators=[DataRequired()])
+    			email = StringField('Email', validators=[DataRequired(), Email()])
+    			location = StringField("Google Maps (URL)", validators=[DataRequired(), URL()])
+    			submit = SubmitField(label="Submit")
+	CSRF Protection:
+		main python file:
+			app = Flask(__name__)
+			app.secret_key = "any-string-you-want-just-keep-it-secret"
+	Python function relevant to the form page:
+		# Contact page, contains a contact form
+		@app.route('/contact', methods=["GET", "POST"])
+		def contact():
+    			contact_form = ContactForm()
+    			if contact_form.validate_on_submit():
+        			print(contact_form.email.data)
+    			return render_template("contact.html", form=contact_form)
+
+	Tip:
+	Place all wtf form classes in an isolated python document along with their associated imports.
+		from flask_wtf import FlaskForm
+		from wtforms import StringField, PasswordField, SubmitField, SelectField, IntegerField
+		from wtforms.validators import DataRequired, Email, URL
+		from flask_ckeditor import CKEditorField
+
+		# Classes for the WTF-Forms
+		class ContactForm(FlaskForm):
+    			name = StringField('Name', validators=[DataRequired()])
+    			email = StringField('Email', validators=[DataRequired(), Email()])
+    			location = StringField("Google Maps (URL)", validators=[DataRequired(), URL()])
+    			submit = SubmitField(label="Submit")
+	Call the classes for form constructions at the top along with other imports:
+		# Importing forms
+		from forms import ProjectForm, RegisterForm, LoginForm, ContactForm
+
+Bootstrap-Flask
+	Initial setup:
+		pip install bootstrap-flask
+		from flask_bootstrap import Bootstrap5
+	Add the following line to the main pythone file:
+		app = Flask(__name__)
+		app.secret_key = "any-string-you-want-just-keep-it-secret"
+		Bootstrap5(app) # initialise bootstrap-flask 
+	Inside the base.html within the style block call the bootstrap style sheet:
+		{{ bootstrap.load_css() }}
+	Now bootstrap styling can be used in all html pages that inherit from the base.
+	For automatic form generation place this at the top of the html page:
+		{% extends "base.html" %}
+		{% from 'bootstrap5/form.html' import render_form %}
+	Then were the form would usually be written out in the html page:
+		{{ render_form(form, novalidate=True) }}
+
+Creating a data base with SQLAlchemy
+	Imports:
+		from flask_sqlalchemy import SQLAlchemy
+		from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+		from sqlalchemy import Integer, String, Float, Text
+	Database Creation:
+		# Database Creation
+		class Base(DeclarativeBase):
+    			pass
+		app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///projects-collection.db"
+		db = SQLAlchemy(model_class=Base) # Create the extension
+		db.init_app(app) # Initialise the app with the extension
+
+		# Database Table Creation
+		class Project(db.Model):
+    			id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    			projectName: Mapped[str] = mapped_column(String(250), unique=True, nullable=False)
+    			technologiesUsed: Mapped[str] = mapped_column(String(250), nullable=False)
+    			description: Mapped[str] = mapped_column(Text, nullable=False)
+    			difficultyRating: Mapped[str] = mapped_column(String(250), nullable=False)
+    			date: Mapped[str] = mapped_column(String(250), nullable=False)
+
+		# Table in DB with the UserMixin
+		class User(UserMixin, db.Model):
+    			id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    			email: Mapped[str] = mapped_column(String(100), unique=True)
+    			password: Mapped[str] = mapped_column(String(100))
+    			name: Mapped[str] = mapped_column(String(1000))
+
+		# Create table schema in the database. Requires application context.
+		with app.app_context():
+    			db.create_all()
+
+	Reading database:
+		# Home page, Displays all projects
+		@app.route('/')
+		def home():
+    			# Construct a query to select from the database. Returns the rows in the database
+    			result = db.session.execute(db.select(Project).order_by(Project.projectName))
+    			# Use .scalars() to get the elements rather than entire rows from the database
+    			all_projects = result.scalars().all()
+    			return render_template("index.html", all_posts=all_projects)
+		# Displays all the details related to a particular project
+		@app.route("/project/<int:index>")
+		def all_project_details(index):
+    			# Using Project ID to retrieve it from the DB
+    			requested_project = db.get_or_404(Project, index)
+    			return render_template("post.html", project=requested_project, current_user=current_user)
+
+	Add to Database:
+		# Add a project, contains a form for adding a project item
+		@app.route('/add', methods=["GET", "POST"])
+		def add():
+    			project_form = ProjectForm()
+    			if project_form.validate_on_submit():
+        			new_project = Project(
+            				projectName=request.form["projectName"],  # Alternative: projectName=form.projectName.data
+            				technologiesUsed=request.form["technologiesUsed"],
+            				description=request.form["description"],
+            				difficultyRating=request.form["difficultyRating"],
+            				date=date.today().strftime("%B %d, %Y")
+        			)
+        			db.session.add(new_project)
+        			db.session.commit()
+        			return redirect(url_for('home'))
+    			return render_template("add.html", form=project_form)
+	Edit a Database entry:
+		# Edit a project
+		@app.route("/edit/<int:index>", methods=["GET", "POST"])
+		def edit(index):
+    			project = db.get_or_404(Project, index)
+			# Autofilling edit form with existing data
+    			form = ProjectForm(
+        			projectName=project.projectName,
+        			technologiesUsed=project.technologiesUsed,
+        			description=project.description,
+        			difficultyRating=project.difficultyRating
+    			)
+    			if form.validate_on_submit():
+        			project.projectName = form.projectName.data
+        			project.technologiesUsed = form.technologiesUsed.data
+        			project.description = form.description.data
+        			project.difficultyRating = form.difficultyRating.data
+        			db.session.commit()
+        			return redirect(url_for("all_project_details", index=project.id))
+    			return render_template("add.html", form=form, is_edit=True)
+	Delete from database:
+		# Delete a Project
+		@app.route("/delete/<int:index>")
+		def delete(index):
+    			# Deleting a record by ID
+    			project_to_delete = db.get_or_404(Project, index)
+    			# Alternative way to select the book to delete.
+    			# book_to_delete = db.session.execute(db.select(Book).where(Book.id == book_id)).scalar()
+    			db.session.delete(project_to_delete)
+    			db.session.commit()
+    			return redirect(url_for('home'))
+Downloading files:
+	# Downloading a file
+	@app.route('/download')
+	def download():
+    		return send_from_directory('static', path="files/project_details.txt")
+Account Setup and Management:
+	Imports:
+		from flask_login import UserMixin, login_user, LoginManager, login_required, current_user, logout_user
+		from werkzeug.security import generate_password_hash, check_password_hash
+		from functools import wraps
+	Setup:
+		# Basic Flask app setup
+		app = Flask(__name__)
+		app.secret_key = "any-string-you-want-just-keep-it-secret"
+		Bootstrap5(app) # initialise bootstrap-flask
+		CKEditor(app) # Initialise the CKEditor
+
+		# Configure Flask-Login's Login Manager
+		login_manager = LoginManager()
+		login_manager.init_app(app)
+
+		@login_manager.user_loader
+		def load_user(user_id):
+    			return db.get_or_404(User, user_id)
+
+		#Create admin-only decorator
+		def admin_only(f):
+    			@wraps(f)
+    			def decorated_function(*args, **kwargs):
+        			#If id is not 1 then return abort with 403 error
+        			if current_user.id != 1:
+            				return abort(403)
+        			#Otherwise continue with the route function
+        			return f(*args, **kwargs)
+    			return decorated_function
+		Place the @admin_only decorator under any app route to allow only the first account to use that route. E.g:
+			@app.route('/add', methods=["GET", "POST"])
+			@admin_only
+			def add():
+
+	Login, Logout and Register:
+		# Registering an account on the site
+		@app.route('/register', methods=["GET", "POST"])
+		def register():
+    			form = RegisterForm()
+    			if form.validate_on_submit():
+        			# Checking if the email already has an account
+        			email = form.email.data
+        			result = db.session.execute(db.select(User).where(User.email == email))
+        			# Note, email in db is unique so will only have one result.
+        			user = result.scalar()
+        			if user:
+            				# User already exists
+            				flash("Email already has an account, log in instead!")
+            				return redirect(url_for('login'))
+        			# Creating the account
+        			hash_and_salted_password = generate_password_hash(
+            				form.password.data,
+            				method='pbkdf2:sha256',
+            				salt_length=8
+        			)
+        			new_user = User(
+            				email=form.email.data,
+            				name=form.name.data,
+            				password=hash_and_salted_password,
+        			)
+        			db.session.add(new_user)
+        			db.session.commit()
+        			# Log in and authenticate user after adding details to database.
+        			login_user(new_user)
+        			return redirect(url_for("home"))
+    			return render_template("register.html", form=form, current_user=current_user)
+			# Add current_user=current_user to each instance of render_template throughout project
+		
+		@app.route('/login', methods=["GET", "POST"])
+		def login():
+    			form = LoginForm()
+    			if form.validate_on_submit():
+        			email = form.email.data
+        			password = form.password.data
+        			# Find user by email entered.
+        			result = db.session.execute(db.select(User).where(User.email == email))
+        			user = result.scalar()
+        			# Checking if the email has an account
+        			if not user:
+            				flash("That email does not have an account")
+            				return redirect(url_for('login'))
+        			# Check stored password hash against entered password hashed.
+        			elif not check_password_hash(user.password, password):
+            				flash("Password is Incorrect")
+            				return redirect(url_for('login'))
+        			else:
+            				# Logging in the user
+            				login_user(user)
+            				return redirect(url_for('home'))
+    			return render_template("login.html", form=form, current_user=current_user)
+
+		@app.route('/logout')
+		def logout():
+    			logout_user()
+    			return redirect(url_for('home'))
+
+Final import list:
+	# Imports
+	from flask import Flask, render_template, request, redirect, url_for, send_from_directory, flash, abort
+	from flask_bootstrap import Bootstrap5
+	from flask_sqlalchemy import SQLAlchemy
+	from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+	from sqlalchemy import Integer, String, Float, Text
+	from flask_ckeditor import CKEditor
+	from flask_login import UserMixin, login_user, LoginManager, login_required, current_user, logout_user
+	from werkzeug.security import generate_password_hash, check_password_hash
+	from functools import wraps
+	from datetime import date
+	# Importing forms
+	from forms import ProjectForm, RegisterForm, LoginForm, ContactForm
+
+Forms I generated during this project:
+	from flask_wtf import FlaskForm
+	from wtforms import StringField, PasswordField, SubmitField, SelectField, IntegerField
+	from wtforms.validators import DataRequired, Email, URL
+	from flask_ckeditor import CKEditorField
+
+	# Classes for the WTF-Forms
+	class ContactForm(FlaskForm):
+    		name = StringField('Name', validators=[DataRequired()])
+    		email = StringField('Email', validators=[DataRequired(), Email()])
+    		location = StringField("Google Maps (URL)", validators=[DataRequired(), URL()])
+    		submit = SubmitField(label="Submit")
+
+	class ProjectForm(FlaskForm):
+    		# id = IntegerField('Project ID num', validators=[DataRequired()])
+    		projectName = StringField('Project Name', validators=[DataRequired()])
+    		technologiesUsed = StringField('Technologies Used', validators=[DataRequired()])
+    		description = CKEditorField("Description", validators=[DataRequired()]) # The description is using a CKEditorField and not a StringField
+    		difficultyRating = SelectField("Difficulty Rating", choices=["🔌", "🔌🔌", "🔌🔌🔌", "🔌🔌🔌🔌", "🔌🔌🔌🔌🔌"], validators=[DataRequired()])
+    		submit = SubmitField(label="Submit")
+
+	class RegisterForm(FlaskForm):
+    		name = StringField('Name', validators=[DataRequired()])
+    		email = StringField('Email', validators=[DataRequired(), Email()])
+    		password = PasswordField('Password', validators=[DataRequired()])
+    		submit = SubmitField(label="Submit")
+
+	class LoginForm(FlaskForm):
+    		email = StringField('Email', validators=[DataRequired(), Email()])
+    		password = PasswordField('Password', validators=[DataRequired()])
+    		submit = SubmitField(label="Submit")
+
+Tips:
+Hard reseting the chrome style sheet
+	Hold SHIFT and click the browser webpage refresh icon
+
+Editing html live
+	Open up chrome developer tools
+		Go to the console
+			Type the javascript: document.body.contentEditable=true
+		Click on elements, their location will be provided and they can be manipulated
+	To keep the changes made you must save the webpage then drag it into the project and replace the existing old file

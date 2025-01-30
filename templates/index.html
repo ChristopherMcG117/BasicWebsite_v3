@@ -1,0 +1,53 @@
+{% include "header.html" %}
+
+        <!-- Page Header-->
+        <header class="masthead" style="background-image: url('../static/assets/img/BallycarberyRuins-bg.jpg')">
+            <div class="container position-relative px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <div class="site-heading">
+                            <h1>Website Development</h1>
+                            <hr>
+                            <a style="color:white" class="subheading" href="{{ url_for('download') }}">Log In to <u>Download</u> a File containing the development process</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <!-- Main Content-->
+        <div class="container px-4 px-lg-5">
+            <div class="row gx-4 gx-lg-5 justify-content-center">
+                <div class="col-md-10 col-lg-8 col-xl-7">
+                    <span class="subheading">Major Projects and Developments:</span>
+                    {% if all_posts == []: %}
+                    <p>Library of projects is empty</p>
+                    {% endif %}
+                    {% for project in all_posts %}
+                    <div class="post-preview">
+                        <a href="{{ url_for('all_project_details', index=project.id) }}">
+                            <h2 class="post-title">
+                                {{project.projectName}}
+                            </h2>
+                            <h3 class="post-subtitle">
+                                {{project.technologiesUsed}}
+                            </h3>
+                        </a>
+                        <p class="post-meta">
+                            Posted on {{project.date}}
+                        </p>
+                        {% if current_user.id == 1: %}
+                        <a href="{{ url_for('delete', index=project.id) }}"><u>Delete</u></a>
+                        {% endif %}
+                    </div>
+                    <hr>
+                    {% endfor %}
+
+                    <!-- Pager-->
+                    {% if current_user.id == 1: %}
+                    <div class="d-flex justify-content-end mb-4"><a class="btn btn-primary text-uppercase" href="{{ url_for('add') }}">Add a Project</a></div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+{% include "footer.html" %}

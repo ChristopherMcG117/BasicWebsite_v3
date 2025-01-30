@@ -1,0 +1,35 @@
+{% include "header.html" %}
+
+        <!-- Page Header-->
+        <header class="masthead" style="background-image: url('../static/assets/img/cliffside-bg.jpg'">
+            <div class="container position-relative px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <div class="post-heading">
+                            <h1>{{ project.projectName }}</h1>
+                            <h2 class="subheading">{{ project.technologiesUsed }}</h2>
+                            <span class="meta">Posted on {{ project.date }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <!-- Post Content-->
+        <article class="mb-4">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <p>Difficulty Rating: {{ project.difficultyRating }}</p>
+                        <p>Description:</p>
+                        <hr>
+                        <p>{{ project.description|safe }}</p>
+                        <hr>
+                        {% if current_user.id == 1 %}
+                        <a href="{{ url_for('edit', index=project.id) }}" class="button"><u>Edit</u></a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </article>
+
+{% include "footer.html" %}
